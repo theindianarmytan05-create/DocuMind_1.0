@@ -1,0 +1,42 @@
+# --------------------------
+# Environment variables
+# --------------------------
+.env
+
+# --------------------------
+# Uploaded documents (ephemeral)
+# --------------------------
+uploads/
+*.pdf
+*.txt
+*.md
+
+# --------------------------
+# FAISS / embeddings store (ephemeral)
+# --------------------------
+faiss_index.bin
+storage.json
+
+# --------------------------
+# Python cache & temp files
+# --------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.egg-info/
+*.pytest_cache/
+
+# --------------------------
+# IDE / Editor configs
+# --------------------------
+.vscode/
+.idea/
+*.iml
+
+# --------------------------
+# Logs
+# --------------------------
+*.log

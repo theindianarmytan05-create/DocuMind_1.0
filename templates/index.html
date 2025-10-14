@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DocuMind — AI Knowledge Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fa;
+      color: #1f2937;
+    }
+
+    .glass-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glass-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    #answer-box {
+      background-color: #f3f4f6;
+      border-left: 4px solid #2563eb;
+      padding: 16px;
+      border-radius: 8px;
+      max-height: 350px;
+      overflow-y:auto;
+      color: #111827;
+    }
+
+    #answer-box p, #answer-box ul, #answer-box ol, #answer-box strong {
+      margin-bottom: 0.75rem;
+    }
+
+    .passage {
+      background: #e5e7eb;
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .passage p { margin: 0 0 0.5rem 0; }
+    .passage .source { font-weight:700; color:#2563eb; margin-right:0.5rem; }
+    .source { font-weight:600; font-size:0.875rem; color:#2563eb; }
+
+    #about-panel {
+      position: fixed;
+      top: 16px;
+      left: 0;
+      width: 300px;
+      max-width: 80%;
+      background: #ffffff;
+      border-radius: 0 16px 16px 0;
+      padding: 24px;
+      box-shadow: 2px 4px 20px rgba(0,0,0,0.1);
+      transform: translateX(-280px);
+      transition: transform 0.3s ease;
+      z-index: 50;
+    }
+    #about-panel:hover { transform: translateX(0); }
+
+    #question { transition: all 0.2s ease; }
+
+    /* Bold first words for LLM output */
+    .answer-box strong:first-child {
+      color: #1d4ed8;
+      font-size: 1.05rem;
+    }
+
+    /* Scrollbar styling for answer box */
+    #answer-box::-webkit-scrollbar {
+      width: 8px;
+    }
+    #answer-box::-webkit-scrollbar-thumb {
+      background-color: #9ca3af;
+      border-radius: 4px;
+    }
+    #answer-box::-webkit-scrollbar-track {
+      background-color: #f3f4f6;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+<!-- Side Panel -->
+<div id="about-panel">
+  <div class="flex items-center mb-4">
+    <i class="fas fa-brain text-blue-500 text-2xl mr-2"></i>
+    <h2 class="text-2xl font-bold text-gray-800">DocuMind</h2>
+  </div>
+  <p class="text-sm leading-relaxed mb-4 text-gray-600">
+    DocuMind is an AI-powered knowledge assistant using <span class="font-medium text-blue-500">RAG</span> to extract insights and answer your questions from documents.
+  </p>
+
+  <h3 class="text-sm font-semibold uppercase tracking-wide text-blue-500 mb-1">Workflow</h3>
+  <ol class="list-decimal ml-5 space-y-1 text-xs leading-snug mb-4 text-gray-600">
+    <li>Upload PDFs, text, or docs.</li>
+    <li>Embed using semantic vectors (FAISS).</li>
+    <li>Query your documents.</li>
+    <li>Generate AI answers via LLM.</li>
+  </ol>
+
+  <h3 class="text-sm font-semibold uppercase tracking-wide text-blue-500 mb-1">Tech Stack</h3>
+  <p class="text-xs leading-snug text-gray-500">Flask • Python • TailwindCSS • FAISS • Google Gemini LLM • JS</p>
+</div>
+
+<!-- Main Section -->
+<section class="flex flex-col items-center justify-center text-center flex-1 px-6 py-16 space-y-10">
+  <h1 class="text-5xl sm:text-6xl font-extrabold mb-6 text-gray-800">DocuMind</h1>
+  <p id="dynamic-tagline" class="text-blue-500 font-medium text-lg sm:text-xl fade"></p>
+
+  <!-- Ingest Form -->
+  <div class="glass-card w-full max-w-3xl">
+    <h5 class="text-xl font-semibold mb-4 text-blue-500 flex items-center">
+      <i class="fas fa-upload mr-2"></i> Ingest Documents
+    </h5>
+    <form id="ingest-form" class="space-y-3" enctype="multipart/form-data" method="post">
+      <input type="file" id="files" name="files" multiple class="block w-full rounded-lg p-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"/>
+      <div class="flex items-center justify-between">
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 flex items-center transition">
+          <i class="fas fa-file-import mr-2"></i>Upload & Ingest
+        </button>
+        <span id="ingest-status" class="ml-4 text-blue-500 font-medium"></span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Ask Question -->
+  <div class="glass-card w-full max-w-3xl">
+    <h5 class="text-xl font-semibold mb-4 text-green-500 flex items-center">
+      <i class="fas fa-question-circle mr-2"></i> Ask a Question
+    </h5>
+    <textarea id="question" placeholder="Type your question and press Enter..."
+      class="resize-none w-full max-w-2xl bg-gray-100 border border-gray-300 rounded-2xl px-4 py-3 text-center text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden min-h-[50px] max-h-[200px]"
+      rows="1"></textarea>
+    <div id="answer-area" class="mt-4 hidden space-y-3">
+      <h5 class="text-lg font-semibold flex items-center text-purple-500">
+        <i class="fas fa-lightbulb mr-2"></i> Answer
+      </h5>
+      <div id="answer-box" class="answer-box"></div>
+      <h6 class="text-md font-semibold flex items-center text-blue-500 mt-4">
+        <i class="fas fa-book-open mr-2"></i> Supporting Passages
+      </h6>
+      <div id="passages" class="space-y-2"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-gray-50 p-4 text-center text-gray-500 shadow-inner">
+  © 2025 Tanveer Ahmed. All rights reserved.
+</footer>
+
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+
+<script>
+  // Dynamic Taglines
+  const taglines = [
+    "Knowledge at your fingertips 🧠",
+    "Answering questions from your documents 📄",
+    "Retrieve, Analyze, Generate ⚡",
+    "Smart knowledge-base search 🚀",
+    "Powered by AI and FAISS embeddings 🤖"
+  ];
+  let index = 0;
+  const taglineEl = document.getElementById("dynamic-tagline");
+  function changeTagline(){
+    taglineEl.classList.remove('show');
+    setTimeout(()=>{
+      taglineEl.textContent = taglines[index];
+      taglineEl.classList.add('show');
+      index = (index+1) % taglines.length;
+    }, 400);
+  }
+  changeTagline();
+  setInterval(changeTagline, 5000);
+</script>
+</body>
+</html>
