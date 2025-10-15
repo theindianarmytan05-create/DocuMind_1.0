@@ -1,6 +1,3 @@
-Here’s a **fully rewritten and polished version** of your README, with your YouTube demo link included and formatted nicely for GitHub:
-
-````markdown
 # DocuMind 1.0
 
 **DocuMind 1.0** is an intelligent, easy-to-use document-based knowledge retrieval and question-answering system. It allows users to search across PDFs and text files and receive detailed, human-like answers powered by advanced Large Language Models (LLMs). This project was developed as a placement project inspired by a real-world requirement from **Unthinkable Solutions**.
